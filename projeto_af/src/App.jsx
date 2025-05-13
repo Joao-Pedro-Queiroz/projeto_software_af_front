@@ -8,12 +8,12 @@ import { useAuth0 } from '@auth0/auth0-react';
 
 function App() {
   const [token, setToken] = useState(null)
-
-  const [titulo, setTitulo] = useState()
-  const [descricao, setDescricao] = useState()
-  const [tempo, setTempo] = useState()
-
-  const [musicas, setMusicas] = useState([])
+  const [emailAluno, setEmailAluno] = useState()
+  const [idCurso, setIdCurso] = useState()
+  const [status, setStatus] = useState()
+  const [motivoCancelamento, setMotivoCancelamento] = useState()
+  const [cursos, setCursos] = useState([])
+  const [matriculas, setMatriculas] = useState([])
   const [roles, setRoles] = useState([])
 
   const {
@@ -30,7 +30,7 @@ function App() {
       console.log('Roles:', payload['https://musica-insper.com/roles'])
       setRoles(payload['https://musica-insper.com/roles'])
 
-      fetch('http://localhost:8080/musica', {
+      fetch('http://54.232.22.180:8080/api/cursos', {
         method: 'GET',
         headers: {
           'Authorization': 'Bearer ' + token
@@ -38,12 +38,11 @@ function App() {
       }).then(response => { 
         return response.json()
       }).then(data => { 
-        setMusicas(data)
+        setCursos(data)
       }).catch(error => {
         alert(error)
       })
     }
-
   }, [token])
 
   useEffect(() => {
@@ -69,18 +68,18 @@ function App() {
     return <LoginButton />;
   }
 
-  function salvarMusica() {
+  function salvarMatricula() {
 
-    fetch('http://localhost:8080/musica', {
+    fetch('http://54.94.157.137:8080/matricula', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ' + token
       },
       body: JSON.stringify({
-        'titulo': titulo,
-        'descricao': descricao,
-        'tempo': tempo
+        'emailAluno': emailAluno,
+        'idCurso': idCurso,
+        'status': status
       })
     }).then(response => { 
       return response.json()
@@ -90,9 +89,41 @@ function App() {
 
   }
 
+  function listarMatriculas(idCurso) {
+    fetch('http://54.94.157.137:8080/matricula/curso/' + idCurso, {
+      method: 'GET',
+      headers: {
+        'Authorization': 'Bearer ' + token
+      }
+    }).then(response => { 
+      return response.json()
+    }).then(data => { 
+      setMatriculas(data)
+    }).catch(error => {
+      alert(error)
+    })
+  }
+
+  function cancelarMatricula(id, motivo) {
+    fetch('http://54.94.157.137:8080/matricula/cancelar/' + id, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + token
+      },
+      body: JSON.stringify({
+        'motivoCancelamento': motivo
+      })
+    }).then(response => { 
+      return response.json()
+    }).catch(error => {
+      alert(error)
+    })
+  }
+
   function excluir(id) {
 
-    fetch('http://localhost:8080/musica/' + id, {
+    fetch('http://54.94.157.137:8080/matricula/' + id, {
       method: 'DELETE',
       headers: {
         'Authorization': 'Bearer ' + token
@@ -107,48 +138,88 @@ function App() {
 
   return (
     <>
-      <div>
-        <div>
-          <img src={user.picture} alt={user.name} />
-          <h2>{user.name}</h2>
-          <p>{user.email}</p>
-          <LogoutButton />
-        </div>
+  <div>
+    <img src={user.picture} alt={user.name} />
+    <h2>{user.name}</h2>
+    <p>{user.email}</p>
+    <LogoutButton />
+  </div>
 
-       {roles.includes('ADMIN') && <div>
-          Título: <input type='text' onChange={e => setTitulo(e.target.value)} /><br/>
-          Descrição: <input type='text' onChange={e => setDescricao(e.target.value)} /><br/>
-          Tempo: <input type='text' onChange={e => setTempo(e.target.value)} /><br/>
-          <button onClick={() => salvarMusica()}>Cadastrar</button>
-        </div>
-        }
+  <h3>Nova Matrícula</h3>
+  <div>
+    <input
+      type="email"
+      placeholder="Email do Aluno"
+      value={emailAluno || ''}
+      onChange={(e) => setEmailAluno(e.target.value)}
+    />
+    <select value={idCurso || ''} onChange={(e) => setIdCurso(e.target.value)}>
+      <option value="">Selecione um curso</option>
+      {cursos.map((curso) => (
+        <option key={curso.id} value={curso.id}>
+          {curso.titulo}
+        </option>
+      ))}
+    </select>
+    <select value={status || ''} onChange={(e) => setStatus(e.target.value)}>
+      <option value="">Selecione o status</option>
+      <option value="EM_ANDAMENTO">EM ANDAMENTO</option>
+      <option value="CONCLUIDO">CONCLUIDO</option>
+    </select>
+    <button onClick={salvarMatricula}>Salvar Matrícula</button>
+  </div>
 
+  <h3>Listar Matrículas por Curso</h3>
+  <div>
+    <select onChange={(e) => listarMatriculas(e.target.value)}>
+      <option value="">Selecione um curso</option>
+      {cursos.map((curso) => (
+        <option key={curso.id} value={curso.id}>
+          {curso.titulo}
+        </option>
+      ))}
+    </select>
+  </div>
 
-        <div>
-          <table>
-            <thead>
-              <th>Título</th>
-              <th>Descrição</th>
-              <th>Tempo</th>
-              <th>Usuário</th>
-              {roles.includes('ADMIN') && <th>Excluir</th> }
-
-            </thead>
-            <tbody>
-                {musicas.map((musica, index) => {
-                return <tr key={index}>
-                      <td>{musica.titulo}</td>
-                      <td>{musica.descricao}</td>
-                      <td>{musica.tempo}</td>
-                      <td>{musica.email}</td>
-                      {roles.includes('ADMIN') && <td><button onClick={() => excluir(musica.id)}>Excluir</button></td> }
-                    </tr>
-                })}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </>
+  <table border="1" style={{ marginTop: '20px' }}>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Email Aluno</th>
+        <th>Curso</th>
+        <th>Data Matrícula</th>
+        <th>Status</th>
+        <th>Motivo Cancelamento</th>
+        <th>Data Cancelamento</th>
+        <th>Ações</th>
+      </tr>
+    </thead>
+    <tbody>
+      {matriculas.map((matricula) => (
+        <tr key={matricula.id}>
+          <td>{matricula.id}</td>
+          <td>{matricula.emailAluno}</td>
+          <td>{matricula.idCurso}</td>
+          <td>{matricula.dataMatricula}</td>
+          <td>{matricula.status}</td>
+          <td>{matricula.motivoCancelamento}</td>
+          <td>{matricula.dataCancelamento}</td>
+          <td>
+            <button onClick={() => excluir(matricula.id)}>Excluir</button>
+            <button onClick={() => {
+              const motivo = prompt("Informe o motivo do cancelamento:");
+              if (motivo) {
+                cancelarMatricula(matricula.id, motivo);
+              }
+            }}>
+              Cancelar
+            </button>
+          </td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</>
   );
 }
 
