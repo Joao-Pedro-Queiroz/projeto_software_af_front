@@ -8,12 +8,10 @@ import { useAuth0 } from '@auth0/auth0-react';
 
 function App() {
   const [token, setToken] = useState(null)
-  const [emailAluno, setEmailAluno] = useState()
-  const [idCurso, setIdCurso] = useState()
-  const [status, setStatus] = useState()
-  const [motivoCancelamento, setMotivoCancelamento] = useState()
-  const [cursos, setCursos] = useState([])
-  const [matriculas, setMatriculas] = useState([])
+  const [titulo, setTitulo] = useState()
+  const [descricao, setDescricao] = useState()
+  const [nota, setNota] = useState()
+  const [feedbacks, setFeedbacks] = useState([])
   const [roles, setRoles] = useState([])
 
   const {
@@ -30,7 +28,7 @@ function App() {
       console.log('Roles:', payload['https://musica-insper.com/roles'])
       setRoles(payload['https://musica-insper.com/roles'])
 
-      fetch('http://54.232.22.180:8080/api/cursos', {
+      fetch('http://54.94.157.137:8080/api/feedbacks', {
         method: 'GET',
         headers: {
           'Authorization': 'Bearer ' + token
@@ -38,7 +36,7 @@ function App() {
       }).then(response => { 
         return response.json()
       }).then(data => { 
-        setCursos(data)
+        setFeedbacks(data)
       }).catch(error => {
         alert(error)
       })
@@ -68,18 +66,18 @@ function App() {
     return <LoginButton />;
   }
 
-  function salvarMatricula() {
+  function salvarFeedback() {
 
-    fetch('http://54.94.157.137:8080/matricula', {
+    fetch('http://54.94.157.137:8080/api/feedbacks', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ' + token
       },
       body: JSON.stringify({
-        'emailAluno': emailAluno,
-        'idCurso': idCurso,
-        'status': status
+        'titulo': titulo,
+        'descricao': descricao,
+        'nota': nota
       })
     }).then(response => { 
       return response.json()
@@ -89,41 +87,9 @@ function App() {
 
   }
 
-  function listarMatriculas(idCurso) {
-    fetch('http://54.94.157.137:8080/matricula/curso/' + idCurso, {
-      method: 'GET',
-      headers: {
-        'Authorization': 'Bearer ' + token
-      }
-    }).then(response => { 
-      return response.json()
-    }).then(data => { 
-      setMatriculas(data)
-    }).catch(error => {
-      alert(error)
-    })
-  }
+  function excluirFeedback(id) {
 
-  function cancelarMatricula(id, motivo) {
-    fetch('http://54.94.157.137:8080/matricula/cancelar/' + id, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + token
-      },
-      body: JSON.stringify({
-        'motivoCancelamento': motivo
-      })
-    }).then(response => { 
-      return response.json()
-    }).catch(error => {
-      alert(error)
-    })
-  }
-
-  function excluir(id) {
-
-    fetch('http://54.94.157.137:8080/matricula/' + id, {
+    fetch('http://54.94.157.137:8080/api/feedbacks/' + id, {
       method: 'DELETE',
       headers: {
         'Authorization': 'Bearer ' + token
@@ -137,7 +103,7 @@ function App() {
   }
 
   return (
-    <>
+  <>
   <div>
     <img src={user.picture} alt={user.name} />
     <h2>{user.name}</h2>
@@ -145,81 +111,57 @@ function App() {
     <LogoutButton />
   </div>
 
-  <h3>Nova Matrícula</h3>
+  <h3>Novo Feedback</h3>
   <div>
     <input
-      type="email"
-      placeholder="Email do Aluno"
-      value={emailAluno || ''}
-      onChange={(e) => setEmailAluno(e.target.value)}
+      type="text"
+      placeholder="Título"
+      value={titulo}
+      onChange={(e) => setTitulo(e.target.value)}
     />
-    <select value={idCurso || ''} onChange={(e) => setIdCurso(e.target.value)}>
-      <option value="">Selecione um curso</option>
-      {cursos.map((curso) => (
-        <option key={curso.id} value={curso.id}>
-          {curso.titulo}
-        </option>
-      ))}
-    </select>
-    <select value={status || ''} onChange={(e) => setStatus(e.target.value)}>
-      <option value="">Selecione o status</option>
-      <option value="EM_ANDAMENTO">EM ANDAMENTO</option>
-      <option value="CONCLUIDO">CONCLUIDO</option>
-    </select>
-    <button onClick={salvarMatricula}>Salvar Matrícula</button>
+    <input
+      type="text"
+      placeholder="Descrição"
+      value={descricao}
+      onChange={(e) => setDescricao(e.target.value)}
+    />
+    <input
+      type="number"
+      min="0"
+      max="10"
+      placeholder="Nota (0-10)"
+      value={nota}
+      onChange={(e) => setNota(e.target.value)}
+    />
+    <button onClick={salvarFeedback}>Salvar Feedback</button>
   </div>
 
-  <h3>Listar Matrículas por Curso</h3>
-  <div>
-    <select onChange={(e) => listarMatriculas(e.target.value)}>
-      <option value="">Selecione um curso</option>
-      {cursos.map((curso) => (
-        <option key={curso.id} value={curso.id}>
-          {curso.titulo}
-        </option>
-      ))}
-    </select>
-  </div>
-
+  <h3>Feedbacks</h3>
   <table border="1" style={{ marginTop: '20px' }}>
     <thead>
       <tr>
         <th>ID</th>
-        <th>Email Aluno</th>
-        <th>Curso</th>
-        <th>Data Matrícula</th>
-        <th>Status</th>
-        <th>Motivo Cancelamento</th>
-        <th>Data Cancelamento</th>
+        <th>Título</th>
+        <th>Descrição</th>
+        <th>Nota</th>
         <th>Ações</th>
       </tr>
     </thead>
     <tbody>
-      {matriculas.map((matricula) => (
-        <tr key={matricula.id}>
-          <td>{matricula.id}</td>
-          <td>{matricula.emailAluno}</td>
-          <td>{matricula.idCurso}</td>
-          <td>{matricula.dataMatricula}</td>
-          <td>{matricula.status}</td>
-          <td>{matricula.motivoCancelamento}</td>
-          <td>{matricula.dataCancelamento}</td>
+      {feedbacks.map(feedback => (
+        <tr key={feedback.id}>
+          <td>{feedback.id}</td>
+          <td>{feedback.titulo}</td>
+          <td>{feedback.descricao}</td>
+          <td>{feedback.nota}</td>
           <td>
-            <button onClick={() => excluir(matricula.id)}>Excluir</button>
-            <button onClick={() => {
-              const motivo = prompt("Informe o motivo do cancelamento:");
-              if (motivo) {
-                cancelarMatricula(matricula.id, motivo);
-              }
-            }}>
-              Cancelar
-            </button>
+            <button onClick={() => excluirFeedback(feedback.id)}>Excluir</button>
           </td>
         </tr>
       ))}
     </tbody>
   </table>
-</>
+  </>
   );
 }
 
