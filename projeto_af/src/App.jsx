@@ -144,6 +144,7 @@ function App() {
         <th>Título</th>
         <th>Descrição</th>
         <th>Nota</th>
+        <th>Email Usuario</th>
         <th>Ações</th>
       </tr>
     </thead>
@@ -154,6 +155,7 @@ function App() {
           <td>{feedback.titulo}</td>
           <td>{feedback.descricao}</td>
           <td>{feedback.nota}</td>
+          <td>{feedback.emailUsuario}</td>
           <td>
             <button onClick={() => excluirFeedback(feedback.id)}>Excluir</button>
           </td>
